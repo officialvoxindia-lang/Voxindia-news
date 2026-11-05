@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoxIndia</title>
+<meta name="theme-color" content="#09090f">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#09090f;--card:#15151f;--purple:#9b5cff;--text:#f5f5f7;--muted:#aaa}
+body{background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+button,input,textarea{font:inherit}
+button{cursor:pointer;border:0}
+header{height:58px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;background:#11111a;border-bottom:1px solid #292936}
+.logo{font-size:23px;font-weight:800;color:#b78aff}
+.logo span{color:white}
+header button{background:transparent;color:white;font-size:22px}
+#app{max-width:650px;margin:auto;padding-bottom:75px}
+#languageScreen{position:fixed;inset:0;background:var(--bg);z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:25px}
+#languageScreen h1{font-size:34px;color:var(--purple)}
+#languageScreen button{width:220px;padding:14px;border-radius:12px;background:var(--card);color:white;border:1px solid var(--purple)}
+.topics{display:flex;gap:9px;overflow:auto;padding:12px}
+.topic{white-space:nowrap;border-radius:20px;padding:8px 14px;background:#20202b;color:white}
+.topic.active{background:var(--purple)}
+#feed{padding:12px}
+.news-card{background:var(--card);border:1px solid #292936;border-radius:18px;padding:18px;margin-bottom:14px}
+.news-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-bottom:12px}
+.breaking{color:#ff6262;font-weight:bold}
+.news-card h2{font-size:22px;line-height:1.35;margin-bottom:12px}
+.news-card p{font-size:16px;line-height:1.55;color:#ddd}
+.news-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.news-actions button{background:#252532;color:white;border-radius:10px;padding:9px 11px}
+.news-actions button.active{color:#c49cff}
+.full-text{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #333}
+nav{position:fixed;bottom:0;left:0;right:0;background:#11111a;border-top:1px solid #292936;display:flex;justify-content:space-around;padding:12px 4px;z-index:5}
+nav button{background:none;color:#ccc;font-size:13px}
+nav button span{display:block;font-size:20px;margin-bottom:3px}
+.modal{position:fixed;inset:0;background:#000b;z-index:20;display:none;align-items:flex-end;justify-content:center}
+.modal-box{background:#171722;width:100%;max-width:650px;max-height:85vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.modal-head button{background:none;color:white;font-size:24px}
+input,textarea{width:100%;background:#252532;color:white;border:1px solid #3a3a49;border-radius:10px;padding:12px;margin:7px 0}
+textarea{min-height:100px;resize:vertical}
+.primary{background:var(--purple);color:white;padding:12px 16px;border-radius:10px;width:100%;margin-top:8px}
+.comment{padding:12px;background:#242430;border-radius:10px;margin:8px 0}
+.comment small{color:#aaa}
+.notice{padding:12px;border-radius:10px;margin:10px 0;background:#252532;color:#ddd}
+.error{color:#ff8b8b}
+.success{color:#a8ffbe}
+#accountInfo{color:#aaa;font-size:13px;margin:8px 0}
+.empty{text-align:center;padding:30px;color:#aaa}
+</style>
+</head>
+<body>
+
+<div id="languageScreen">
+  <h1>VoxIndia</h1>
+  <p>Select your language</p>
+  <button onclick="chooseLanguage('hi')">हिन्दी</button>
+  <button onclick="chooseLanguage('en')">English</button>
+</div>
+
+<header>
+  <div class="logo">Vox<span>India</span></div>
+  <button onclick="openAccount()">👤</button>
+</header>
+
+<div id="app">
+  <div class="topics" id="topics">
+    <button class="topic active" data-category="All">All</button>
+    <button class="topic" data-category="India">India</button>
+    <button class="topic" data-category="World">World</button>
+    <button class="topic" data-category="Politics">Politics</button>
+    <button class="topic" data-category="Business">Business</button>
+    <button class="topic" data-category="Technology">Technology</button>
+    <button class="topic" data-category="Sports">Sports</button>
+    <button class="topic" data-category="Entertainment">Entertainment</button>
+  </div>
+  <main id="feed">
+    <div class="empty">Loading news...</div>
+  </main>
+</div>
+
+<nav>
+  <button onclick="showFeed()"><span>🏠</span>Home</button>
+  <button onclick="showSaved()"><span>🔖</span>Saved</button>
+  <button onclick="showTopics()"><span>⭐</span>Topics</button>
+  <button onclick="openAccount()"><span>👤</span>Account</button>
+</nav>
+
+<div class="modal" id="accountModal">
+  <div class="modal-box">
+    <div class="modal-head"><h2>Account</h2><button onclick="closeModal('accountModal')">×</button></div>
+    <div id="accountInfo">Not signed in</div>
+    <button class="primary" id="loginBtn" onclick="loginGoogle()">Sign in with Google</button>
+    <button class="primary" id="logoutBtn" onclick="logout()" style="display:none">Sign out</button>
+    <button class="primary" onclick="closeModal('accountModal')">Close</button>
+  </div>
+</div>
+
+<div class="modal" id="commentsModal">
+  <div class="modal-box">
+    <div class="modal-head"><h2>Comments</h2><button onclick="closeModal('commentsModal')">×</button></div>
+    <div id="commentsList"></div>
+    <form id="commentForm">
+      <textarea id="commentText" placeholder="Write a comment..." required maxlength="1000"></textarea>
+      <button class="primary" type="submit" id="sendCommentBtn">Send Comment</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="topicsModal">
+  <div class="modal-box">
+    <div class="modal-head"><h2>Follow Topics</h2><button onclick="closeModal('topicsModal')">×</button></div>
+    <div id="topicsChoices"></div>
+    <button class="primary" onclick="saveTopics()">Save Topics</button>
+  </div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, getDocs, addDoc, doc, setDoc,
+  deleteDoc, query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBLRtN-Q15B0EeXfe4gyu50YZTGull-kzU",
+  authDomain: "voxindia-77b87.firebaseapp.com",
+  databaseURL: "https://voxindia-77b87-default-rtdb.firebaseio.com",
+  projectId: "voxindia-77b87",
+  storageBucket: "voxindia-77b87.firebasestorage.app",
+  messagingSenderId: "475424283766",
+  appId: "1:475424283766:web:d86af5966be9578f3d9357",
+  measurementId: "G-2HZL7BG9FG"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+let user = null;
+let allNews = [];
+let activeCategory = "All";
+let currentCommentNewsId = "";
+let currentView = "feed";
+let selectedTopics = JSON.parse(localStorage.getItem("voxTopics") || "[]");
+let language = localStorage.getItem("voxLanguage") || "en";
+let savedIds = new Set();
+
+const $ = id => document.getElementById(id);
+const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[ch]));
+
+function showNotice(message, type="") {
+  const old = document.getElementById("globalNotice");
+  if (old) old.remove();
+  const box = document.createElement("div");
+  box.id = "globalNotice";
+  box.className = "notice " + type;
+  box.textContent = message;
+  $("feed").prepend(box);
+  setTimeout(() => box.remove(), 4500);
+}
+
+window.chooseLanguage = lang => {
+  language = lang;
+  localStorage.setItem("voxLanguage", lang);
+  $("languageScreen").style.display = "none";
+};
+
+if (localStorage.getItem("voxLanguage")) {
+  $("languageScreen").style.display = "none";
+}
+
+window.openAccount = () => {
+  $("accountModal").style.display = "flex";
+};
+window.closeModal = id => {
+  $(id).style.display = "none";
+};
+
+window.loginGoogle = async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    showNotice("Login error: " + err.message, "error");
+  }
+};
+
+window.logout = async () => {
+  try {
+    await signOut(auth);
+  } catch (err) {
+    showNotice(err.message, "error");
+  }
+};
+
+onAuthStateChanged(auth, async currentUser => {
+  user = currentUser;
+  $("accountInfo").textContent = user
+    ? "Signed in as " + (user.email || user.displayName || "")
+    : "Not signed in";
+  $("loginBtn").style.display = user ? "none" : "block";
+  $("logoutBtn").style.display = user ? "block" : "none";
+  if (user) await loadSaved();
+});
+
+async function loadSaved() {
+  savedIds.clear();
+  if (!user) return;
+  try {
+    const snap = await getDocs(collection(db, "users", user.uid, "savedNews"));
+    snap.forEach(item => savedIds.add(item.id));
+  } catch (err) {
+    console.error("Saved news load error:", err);
+  }
+}
+
+async function loadNews() {
+  $("feed").innerHTML = '<div class="empty">Loading news...</div>';
+  try {
+    const snap = await getDocs(collection(db, "news"));
+    allNews = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+      .filter(n => n.published !== false)
+      .sort((a,b) => {
+        const av = a.createdAt?.seconds || 0;
+        const bv = b.createdAt?.seconds || 0;
+        return bv-av;
+      });
+    renderNews();
+  } catch (err) {
+    $("feed").innerHTML =
+      '<div class="notice error">News load failed: ' +
+      escapeHTML(err.message) + '</div>';
+  }
+}
+
+function renderNews() {
+  currentView = "feed";
+  const items = activeCategory === "All"
+    ? allNews
+    : allNews.filter(n => n.category === activeCategory);
+
+  if (!items.length) {
+    $("feed").innerHTML =
+      '<div class="empty">No news available in this category yet.</div>';
+    return;
+  }
+
+  $("feed").innerHTML = items.map(n => {
+    const title = n.title || n.headline || "News";
+    const body = n.content || n.text || n.description || "";
+    const isBreaking = n.breaking === true;
+    const category = n.category || "India";
+    const date = n.createdAt?.toDate
+      ? n.createdAt.toDate().toLocaleDateString()
+      : "";
+    const saved = savedIds.has(n.id);
+    return `
+      <article class="news-card" id="news-${escapeHTML(n.id)}">
+        <div class="news-meta">
+          <span>${isBreaking ? '<span class="breaking">● BREAKING </span>' : ""}
+            ${escapeHTML(category)}</span>
+          <span>${escapeHTML(date)}</span>
+        </div>
+        <h2>${escapeHTML(title)}</h2>
+        <p>${escapeHTML(body.slice(0,260))}${body.length>260?"…":""}</p>
+        <div class="full-text" id="full-${escapeHTML(n.id)}">
+          <p>${escapeHTML(body)}</p>
+        </div>
+        <div class="news-actions">
+          <button onclick="toggleLike('${escapeHTML(n.id)}',this)">♡ Like</button>
+          <button onclick="shareNews('${escapeHTML(n.id)}')">↗ Share</button>
+          <button class="${saved?"active":""}" onclick="toggleSave('${escapeHTML(n.id)}',this)">🔖 ${saved?"Saved":"Save"}</button>
+          <button onclick="openComments('${escapeHTML(n.id)}')">💬 Comments</button>
+          <button onclick="toggleFull('${escapeHTML(n.id)}',this)">Read Full</button>
+          <button onclick="reportNews('${escapeHTML(n.id)}')">⚑ Report</button>
+        </div>
+      </article>`;
+  }).join("");
+}
+
+window.toggleFull = (id, button) => {
+  const el = $("full-" + id);
+  if (!el) return;
+  const open = el.style.display === "block";
+  el.style.display = open ? "none" : "block";
+  button.textContent = open ? "Read Full" : "Show Less";
+};
+
+window.toggleLike = (id, button) => {
+  const key = "voxLike_" + id;
+  const liked = localStorage.getItem(key) === "1";
+  localStorage.setItem(key, liked ? "0" : "1");
+  button.classList.toggle("active", !liked);
+  button.textContent = liked ? "♡ Like" : "♥ Liked";
+};
+
+window.shareNews = async id => {
+  const n = allNews.find(x => x.id === id);
+  if (!n) return;
+  const text = (n.title || n.headline || "VoxIndia News") + "\n" +
+    (n.content || n.text || "");
+  try {
+    if (navigator.share) await navigator.share({ title:"VoxIndia", text });
+    else {
+      await navigator.clipboard.writeText(text);
+      showNotice("News copied to clipboard.", "success");
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+window.toggleSave = async (id, button) => {
+  if (!user) {
+    showNotice("Please sign in to save news.", "error");
+    openAccount();
+    return;
+  }
+  try {
+    const ref = doc(db, "users", user.uid, "savedNews", id);
+    if (savedIds.has(id)) {
+      await deleteDoc(ref);
+      savedIds.delete(id);
+      button.classList.remove("active");
+      button.textContent = "🔖 Save";
+    } else {
+      await setDoc(ref, { newsId:id, savedAt:serverTimestamp() });
+      savedIds.add(id);
+      button.classList.add("active");
+      button.textContent = "🔖 Saved";
+    }
+  } catch (err) {
+    showNotice("Save failed: " + err.message, "error");
+  }
+};
+
+window.reportNews = async id => {
+  if (!user) {
+    showNotice("Please sign in to report news.", "error");
+    openAccount();
+    return;
+  }
+  const reason = prompt("Report reason?");
+  if (!reason) return;
+  try {
+    await addDoc(collection(db, "reports"), {
+      newsId:id, reason, uid:user.uid, createdAt:serverTimestamp()
+    });
+    showNotice("Report submitted.", "success");
+  } catch (err) {
+    showNotice("Report failed: " + err.message, "error");
+  }
+};
+
+window.openComments = async id => {
+  currentCommentNewsId = id;
+  $("commentsModal").style.display = "flex";
+  $("commentsList").innerHTML = '<div class="empty">Loading comments...</div>';
+  await loadComments(id);
+};
+
+async function loadComments(id) {
+  const list = $("commentsList");
+  try {
+    const q = query(
+      collection(db, "news", id, "comments"),
+      orderBy("createdAt", "desc")
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      list.innerHTML = '<div class="empty">No comments yet.</div>';
+      return;
+    }
+    list.innerHTML = snap.docs.map(d => {
+      const c = d.data();
+      return `<div class="comment">
+        <strong>${escapeHTML(c.displayName || "VoxIndia User")}</strong>
+        <p>${escapeHTML(c.text || "")}</p>
+      </div>`;
+    }).join("");
+  } catch (err) {
+    list.innerHTML = '<div class="notice error">Comments load failed: ' +
+      escapeHTML(err.message) + '</div>';
+  }
+}
+  $("commentForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (!user) {
+    showNotice("Comment karne ke liye pehle Google Login karo.", "error");
+    openAccount();
+    return;
+  }
+
+  const input = $("commentText");
+  const text = input.value.trim();
+  if (!text) return;
+
+  const button = $("sendCommentBtn");
+  button.disabled = true;
+  button.textContent = "Sending...";
+
+  try {
+    await addDoc(
+      collection(db, "news", currentCommentNewsId, "comments"),
+      {
+        text,
+        uid: user.uid,
+        displayName: user.displayName || "VoxIndia User",
+        createdAt: serverTimestamp()
+      }
+    );
+
+    input.value = "";
+    await loadComments(currentCommentNewsId);
+    showNotice("Comment sent.", "success");
+  } catch (err) {
+    showNotice("Comment failed: " + err.message, "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Send Comment";
+  }
+});
+
+window.showFeed = () => {
+  currentView = "feed";
+  renderNews();
+};
+
+window.showSaved = async () => {
+  if (!user) {
+    showNotice("Saved news dekhne ke liye login karo.", "error");
+    openAccount();
+    return;
+  }
+  currentView = "saved";
+  await loadSaved();
+  const items = allNews.filter(n => savedIds.has(n.id));
+  if (!items.length) {
+    $("feed").innerHTML = '<div class="empty">No saved news yet.</div>';
+    return;
+  }
+  activeCategory = "All";
+  $("feed").innerHTML = "";
+  const previous = allNews;
+  allNews = items;
+  renderNews();
+  allNews = previous;
+};
+
+window.showTopics = () => {
+  const topics = ["India","World","Politics","Business","Technology",
+                  "Sports","Entertainment","Health","Education"];
+  $("topicsChoices").innerHTML = topics.map(topic => `
+    <label style="display:block;padding:12px;background:#252532;border-radius:10px;margin:8px 0">
+      <input type="checkbox" value="${escapeHTML(topic)}"
+        ${selectedTopics.includes(topic)?"checked":""}
+        style="width:auto;margin-right:10px">
+      ${escapeHTML(topic)}
+    </label>
+  `).join("");
+  $("topicsModal").style.display = "flex";
+};
+
+window.saveTopics = () => {
+  selectedTopics = Array.from(
+    $("topicsChoices").querySelectorAll('input[type="checkbox"]:checked')
+  ).map(input => input.value);
+  localStorage.setItem("voxTopics", JSON.stringify(selectedTopics));
+  closeModal("topicsModal");
+  showNotice("Topics saved.", "success");
+};
+
+$("topics").addEventListener("click", event => {
+  const button = event.target.closest("button[data-category]");
+  if (!button) return;
+  document.querySelectorAll(".topic").forEach(el => el.classList.remove("active"));
+  button.classList.add("active");
+  activeCategory = button.dataset.category;
+  renderNews();
+});
+
+$("accountModal").addEventListener("click", event => {
+  if (event.target.id === "accountModal") closeModal("accountModal");
+});
+$("commentsModal").addEventListener("click", event => {
+  if (event.target.id === "commentsModal") closeModal("commentsModal");
+});
+$("topicsModal").addEventListener("click", event => {
+  if (event.target.id === "topicsModal") closeModal("topicsModal");
+});
+
+loadNews();
+</script>
+</body>
+</html>
+</html>
