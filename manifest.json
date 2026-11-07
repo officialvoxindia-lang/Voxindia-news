@@ -1,11 +1,12 @@
+
 {
   "background_color": "#ffffff",
   "dir": "ltr",
   "display": "standalone",
-  "name": "officialvoxindia-lang.github",
+  "name": "VoxIndia",
   "orientation": "any",
   "scope": "/Voxindia-news/",
-  "short_name": "officialvoxindia-lang.github",
+  "short_name": "VoxIndia",
   "start_url": "/Voxindia-news/",
   "theme_color": "#09090f",
   "id": "/voxindia-news-app/",
@@ -13,5 +14,13 @@
   "lang": "en",
   "categories": [
     "news"
+  ],
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
