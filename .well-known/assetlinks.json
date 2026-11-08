@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.officialvoxindia_lang.twa",
+        "sha256_cert_fingerprints": ["A6:B5:DF:B0:21:D2:D5:3A:C4:E0:38:6B:BA:50:D9:1B:7C:06:5F:D9:4A:DD:E4:5B:46:6E:CE:CB:01:44:58:98"]
+      }
+    }]
